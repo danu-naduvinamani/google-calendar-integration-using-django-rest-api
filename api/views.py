@@ -7,94 +7,97 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 import os
 
+# set environment variable for OAuth2
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-# This variable specifies the name of a file that contains the OAuth 2.0
-# information for this application, including its client_id and client_secret.
+
+# path to client secrets file downloaded from Google API console
 CLIENT_SECRETS_FILE = "credentials.json"
 
-# This OAuth 2.0 access scope allows for full read/write access to the
-# authenticated user's account and requires requests to use an SSL connection and REDIRECT URL.
+# scopes to access Google Calendar API
 SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+# callback URL to redirect to after authentication is complete
 REDIRECT_URL = 'http://127.0.0.1:8000/rest/v1/calendar/redirect/'
+
+# name and version of the Google Calendar API
 API_SERVICE_NAME = 'calendar'
 API_VERSION = 'v3'
 
 
 @api_view(['GET'])
 def GoogleCalendarInitView(request):
-    # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
+    """
+    View to initiate the Google Calendar OAuth2 flow
+    """
+
+    # create a new OAuth2 flow object from client secrets file and scopes
     flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
 
-    # The URI created here must exactly match one of the authorized redirect URIs
-    # for the OAuth 2.0 client, which you configured in the API Console. If this
-    # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
-    # error.
+    # set the redirect URI for the OAuth2 flow
     flow.redirect_uri = REDIRECT_URL
 
+    # generate an authorization URL to redirect the user to for consent
     authorization_url, state = flow.authorization_url(prompt='consent')
 
-    # Store the state so the callback can verify the auth server response.
+    # save the flow state in the user's session
     request.session['state'] = state
 
+    # redirect user to the authorization URL
     return HttpResponseRedirect(authorization_url)
 
 
 @api_view(['GET'])
 def GoogleCalendarRedirectView(request):
-    # Specify the state when creating the flow in the callback so that it can
-    # verified in the authorization server response.
+    """
+    View to complete the Google Calendar OAuth2 flow and retrieve events from the user's primary calendar
+    """
+
+    # get the flow state from the user's session
     state = request.session['state']
 
-    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES, state=state)
+    # create a new OAuth2 flow object from client secrets file, scopes, and flow state
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE, scopes=SCOPES, state=state)
+
+    # set the redirect URI for the OAuth2 flow
     flow.redirect_uri = REDIRECT_URL
 
-    # Use the authorization server's response to fetch the OAuth 2.0 tokens.
+    # get the authorization response from the request's full path
     authorization_response = request.get_full_path()
+
+    # exchange the authorization code for a token and save the credentials in the user's session
     flow.fetch_token(authorization_response=authorization_response)
-
-    # Save credentials back to session in case access token was refreshed.
-    # ACTION ITEM: In a production app, you likely want to save these
-    # credentials in a persistent database instead.
     credentials = flow.credentials
-    request.session['credentials'] = credentials_to_dict(credentials)
+    request.session['credentials'] = request.session['credentials'] = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
 
-    # Check if credentials are in session
+    # check if credentials were successfully saved in the user's session
     if 'credentials' not in request.session:
         return redirect('rest/v1/calendar/init/')
 
-    # Load credentials from the session.
-    credentials = Credentials(
-        **request.session['credentials'])
-
-    # Use the Google API Discovery Service to build client libraries, IDE plugins,
-    # and other tools that interact with Google APIs.
-    # The Discovery API provides a list of Google APIs and a machine-readable "Discovery Document" for each API
+    # create a new Google Calendar API service object using the saved credentials
+    credentials = Credentials(**request.session['credentials'])
     service = build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
-    # Returns the calendars on the user's calendar list
-    calendar_list = service.calendarList().list().execute()
+    # retrieve the user's upcoming events from their primary calendar
+    events = service.events().list(calendarId='primary', maxResults=10,
+                                   singleEvents=True, orderBy='startTime').execute()
 
-    # Getting user ID which is his/her email address
-    calendar_id = calendar_list['items'][0]['id']
-
-    # Getting all events associated with a user ID (email address)
-    events = service.events().list(calendarId=calendar_id).execute()
-
-    events_list_append = []
+    # if no events were found, return an error message
     if not events['items']:
         print('No data found.')
         return Response({"message": "No data found or user credentials invalid."})
     else:
+        # if events were found, append each event to a list and return the list in the response
+        events_list_append = []
         for events_list in events['items']:
             events_list_append.append(events_list)
             return Response({"events": events_list_append})
+    # Return an error message if no events are found
     return Response({"error": "calendar event aren't here"})
-
-
-def credentials_to_dict(credentials):
-    return {'token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes}

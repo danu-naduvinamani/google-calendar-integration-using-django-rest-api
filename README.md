@@ -6,7 +6,7 @@ To get started with this project, follow these steps:
 
 1.Clone the repository to your local machine:
 
-``` [git clone https://github.com/your-username/google-calendar-django-rest.git](https://github.com/danu-naduvinamani/google-calendar-integration-using-django-rest-api.git) ```
+```https://github.com/danu-naduvinamani/google-calendar-integration-using-django-rest-api.git ```
 
 2.Install the required Python packages:
 
@@ -14,13 +14,13 @@ To get started with this project, follow these steps:
 
 3.Set up a Google Cloud Console project and download the JSON credentials file. Follow the Google Calendar API Python Quickstart guide to learn how to set up your project and download the credentials.
 
-4.Rename the credentials file to credentials.json and place it in the project root directory.
+4.Rename the credentials file to `credentials.json` and place it in the project root directory.
 
 5.Run the Django development server:
 
 ```python manage.py runserver```
 
-The API will be available at 'http://127.0.0.1:8000/rest/v1/calendar/'.
+The API will be available at 'http://127.0.0.1:8000/rest/v1/calendar/init/'.
 
 ## API Endpoints
 
@@ -46,6 +46,6 @@ Response:
 200 OK - Returns a JSON response containing the authenticated user's events from their primary calendar.
 ## Screenshots
 #### OAuth2 Consent Screen
-OAuth2 Consent Screen
+![authscreen](https://user-images.githubusercontent.com/126635832/222046869-ec84645c-0f47-471a-80cb-f98d78d1628e.jpg)
 #### Calendar Events API Endpoint
-Calendar Events API Endpoint
+![Screenshot (21)](https://user-images.githubusercontent.com/126635832/222046944-b9e3297e-38af-43d4-8118-7370cb7d6be2.png)

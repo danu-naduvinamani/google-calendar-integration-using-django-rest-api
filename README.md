@@ -20,13 +20,15 @@ To get started with this project, follow these steps:
 
 ```python manage.py runserver```
 
-The API will be available at 'http://127.0.0.1:8000/rest/v1/calendar/init/'.
+The API will be available at 'https://4073efd3-faa5-4bed-a66e-fd0739f947af.id.repl.co/rest/v1/calendar/init/'.
 
 ## API Endpoints
 
 This project implements two API endpoints for interacting with the Google Calendar API:
 
 ```/rest/v1/calendar/init/```
+
+(https://4073efd3-faa5-4bed-a66e-fd0739f947af.id.repl.co/rest/v1/calendar/init/)
 
 This endpoint initiates the OAuth2 authorization flow and redirects the user to the Google OAuth2 consent screen.
 
@@ -37,6 +39,8 @@ Response:
 302 Found - If the user is not authenticated, the server will redirect to the Google OAuth2 consent screen.
 
 ```/rest/v1/calendar/redirect/```
+
+(https://4073efd3-faa5-4bed-a66e-fd0739f947af.id.repl.co/rest/v1/calendar/redirect/)
 
 This endpoint handles the OAuth2 callback and exchanges the authorization code for an access token.
 
